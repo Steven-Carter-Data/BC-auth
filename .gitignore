@@ -3,6 +3,9 @@
 .env.local
 .env.production
 
+# Streamlit secrets - NEVER commit these!
+.streamlit/secrets.toml
+
 # Python
 __pycache__/
 *.py[cod]
@@ -35,5 +38,13 @@ wheels/
 .DS_Store
 Thumbs.db
 
-# Streamlit
-.streamlit/secrets.toml
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite
+
+# Temporary files
+*.tmp
+*.temp

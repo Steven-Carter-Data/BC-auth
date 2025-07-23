@@ -1,4 +1,5 @@
 import os
+import streamlit as st
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
@@ -6,8 +7,17 @@ load_dotenv()
 
 class Database:
     def __init__(self):
-        url = os.getenv("SUPABASE_URL")
-        key = os.getenv("SUPABASE_KEY")
+        # Try to get from Streamlit secrets first, then from environment
+        try:
+            url = st.secrets["SUPABASE_URL"]
+            key = st.secrets["SUPABASE_KEY"]
+        except (KeyError, AttributeError, FileNotFoundError):
+            url = os.getenv("SUPABASE_URL")
+            key = os.getenv("SUPABASE_KEY")
+            
+        if not url or not key:
+            raise ValueError("Supabase URL and key must be provided")
+            
         self.supabase: Client = create_client(url, key)
     
     def upsert_athlete(self, athlete_data):
@@ -20,7 +30,7 @@ class Database:
     
     def get_all_athletes(self):
         """Get all athletes"""
-        return self.supabase.table('athletes').select("*").execute()
+        return self.supabase.table('athletes').select("*").order('firstname').execute()
     
     def upsert_activity(self, activity_data):
         """Insert or update activity"""

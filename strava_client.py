@@ -9,15 +9,22 @@ load_dotenv()
 class StravaClient:
     def __init__(self):
         self.client = Client()
-        self.client_id = os.getenv('STRAVA_CLIENT_ID')
-        self.client_secret = os.getenv('STRAVA_CLIENT_SECRET')
         
-    def get_authorization_url(self, redirect_uri='http://localhost:8501'):
+        # Try to get from Streamlit secrets first, then from environment
+        try:
+            self.client_id = st.secrets["STRAVA_CLIENT_ID"]
+            self.client_secret = st.secrets["STRAVA_CLIENT_SECRET"]
+            self.redirect_uri = st.secrets["REDIRECT_URI"]
+        except (KeyError, AttributeError, FileNotFoundError):
+            self.client_id = os.getenv('STRAVA_CLIENT_ID')
+            self.client_secret = os.getenv('STRAVA_CLIENT_SECRET')
+            self.redirect_uri = os.getenv('REDIRECT_URI', 'http://localhost:8501')
+        
+    def get_authorization_url(self):
         """Get OAuth authorization URL"""
-        # Ensure redirect_uri matches exactly what's in Strava settings
         return self.client.authorization_url(
             client_id=self.client_id,
-            redirect_uri=redirect_uri,
+            redirect_uri=self.redirect_uri,
             scope=['activity:read_all', 'profile:read_all', 'read_all'],
             approval_prompt='auto'  # Don't force re-approval every time
         )
@@ -59,16 +66,20 @@ class StravaClient:
     
     def get_activity_zones(self, activity_id):
         """Get heart rate zones for an activity"""
-        zones = self.client.get_activity_zones(activity_id)
+        try:
+            zones = self.client.get_activity_zones(activity_id)
+            
+            # Extract heart rate zones
+            for zone in zones:
+                if zone.type == 'heartrate':
+                    return {
+                        'zone_1_time': zone.distribution_buckets[0].time if len(zone.distribution_buckets) > 0 else 0,
+                        'zone_2_time': zone.distribution_buckets[1].time if len(zone.distribution_buckets) > 1 else 0,
+                        'zone_3_time': zone.distribution_buckets[2].time if len(zone.distribution_buckets) > 2 else 0,
+                        'zone_4_time': zone.distribution_buckets[3].time if len(zone.distribution_buckets) > 3 else 0,
+                        'zone_5_time': zone.distribution_buckets[4].time if len(zone.distribution_buckets) > 4 else 0,
+                    }
+        except Exception as e:
+            print(f"Error fetching heart rate zones: {e}")
         
-        # Extract heart rate zones
-        for zone in zones:
-            if zone.type == 'heartrate':
-                return {
-                    'zone_1_time': zone.distribution_buckets[0].time if len(zone.distribution_buckets) > 0 else 0,
-                    'zone_2_time': zone.distribution_buckets[1].time if len(zone.distribution_buckets) > 1 else 0,
-                    'zone_3_time': zone.distribution_buckets[2].time if len(zone.distribution_buckets) > 2 else 0,
-                    'zone_4_time': zone.distribution_buckets[3].time if len(zone.distribution_buckets) > 3 else 0,
-                    'zone_5_time': zone.distribution_buckets[4].time if len(zone.distribution_buckets) > 4 else 0,
-                }
         return None
