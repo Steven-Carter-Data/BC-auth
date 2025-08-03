@@ -1,9 +1,0 @@
-streamlit
-stravalib
-supabase
-pandas
-plotly
-python-dotenv
-flask
-gunicorn
-requests
