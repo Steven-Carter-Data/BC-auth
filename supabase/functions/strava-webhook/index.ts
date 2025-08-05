@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'supabase'
 
 interface StravaWebhookEvent {
   object_type: string;
@@ -25,6 +25,7 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     const verifyToken = Deno.env.get('STRAVA_VERIFY_TOKEN') ?? '05978704df8c945ee89a3eca83453cc540595530'
     const clientSecret = Deno.env.get('STRAVA_CLIENT_SECRET') ?? ''
+    const clientId = Deno.env.get('STRAVA_CLIENT_ID') ?? ''
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
@@ -81,7 +82,7 @@ Deno.serve(async (req) => {
               method: 'POST',
               headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
               body: new URLSearchParams({
-                client_id: Deno.env.get('STRAVA_CLIENT_ID') ?? '',
+                client_id: clientId,
                 client_secret: clientSecret,
                 refresh_token: athlete.refresh_token,
                 grant_type: 'refresh_token'
@@ -205,16 +206,32 @@ Deno.serve(async (req) => {
       return new Response('OK', { headers: corsHeaders })
     }
 
-    return new Response('Method not allowed', { 
-      status: 405, 
-      headers: corsHeaders 
-    })
+    // Default response for other methods
+    return new Response(
+      JSON.stringify({ 
+        message: "Strava webhook is working!", 
+        method: req.method,
+        timestamp: new Date().toISOString()
+      }),
+      { 
+        headers: { 
+          "Content-Type": "application/json",
+          ...corsHeaders
+        } 
+      }
+    )
 
   } catch (error) {
     console.error('Webhook error:', error)
-    return new Response('Internal Server Error', { 
-      status: 500, 
-      headers: corsHeaders 
-    })
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500,
+        headers: { 
+          "Content-Type": "application/json",
+          ...corsHeaders 
+        }
+      }
+    )
   }
 })

@@ -5,6 +5,6 @@
     "strict": false
   },
   "imports": {
-    "supabase": "https://esm.sh/@supabase/supabase-js@2"
+    "supabase": "https://esm.sh/@supabase/supabase-js@2.39.3"
   }
 }

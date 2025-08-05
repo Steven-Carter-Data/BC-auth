@@ -1,5 +1,5 @@
 [functions.strava-webhook]
 enabled = true
-verify_jwt = false  # This is the key fix - disable JWT verification for public webhooks
+verify_jwt = false  # This is critical - must be false for public webhooks
 import_map = "./functions/strava-webhook/deno.json"
 entrypoint = "./functions/strava-webhook/index.ts"
